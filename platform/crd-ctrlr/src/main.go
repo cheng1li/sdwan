@@ -72,6 +72,18 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Mwan3Policy")
 		os.Exit(1)
 	}
+	if err = (&batchv1alpha1.Mwan3Policy{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Mwan3Policy")
+		os.Exit(1)
+	}
+	if err = (&batchv1alpha1.Mwan3Policy{}).SetupWebhookWithManager2(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Mwan3Policy")
+		os.Exit(1)
+	}
+	if err = (&batchv1alpha1.Mwan3Policy{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Mwan3Policy")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
