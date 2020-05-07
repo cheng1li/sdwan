@@ -93,14 +93,10 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 	}
 
 	key := "example-mutating-admission-webhook"
-	anno, found := pod.Annotations[key]
-	if !found {
-		return admission.Denied(fmt.Sprintf("missing annotation %s", key))
+	_, found := pod.Annotations[key]
+	if found {
+		return admission.Denied(fmt.Sprintf("can't have annotation %s", key))
 	}
-	if anno != "foo" {
-		return admission.Denied(fmt.Sprintf("annotation %s did not have value %q", key, "foo"))
-	}
-
 	return admission.Allowed("")
 }
 
