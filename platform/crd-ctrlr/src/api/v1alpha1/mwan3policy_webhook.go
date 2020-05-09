@@ -85,6 +85,7 @@ type podValidator struct {
 
 // podValidator admits a pod iff a specific annotation exists.
 func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	mwan3policylog.Info(fmt.Sprintf("userinfo %v", req.UserInfo))
 	pod := &corev1.Pod{}
 
 	err := v.decoder.Decode(req, pod)
