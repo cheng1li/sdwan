@@ -17,11 +17,14 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 
-	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -85,20 +88,44 @@ type podValidator struct {
 
 // podValidator admits a pod iff a specific annotation exists.
 func (v *podValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	mwan3policylog.Info(fmt.Sprintf("userinfo %v", req.UserInfo))
-	pod := &corev1.Pod{}
+	if req.Kind.Group != "batch.sdewan.akraino.org" {
+		return admission.Errored(http.StatusBadRequest, errors.New("The group is not batch.sdewan.akraino.org"))
+	}
+	var meta metav1.ObjectMeta
+	var err error
+	var obj runtime.Object
+	switch req.Kind.Kind {
+	case "Mwan3Policy":
+		obj = &Mwan3Policy{}
+	default:
+		return admission.Errored(http.StatusBadRequest, errors.New(fmt.Sprintf("Kind is not supported: %v", req.Kind)))
+	}
 
-	err := v.decoder.Decode(req, pod)
+	switch req.Operation {
+	case "CREATE", "UPDATE":
+		err = v.decoder.Decode(req, obj)
+	case "DELETE":
+		err = v.Client.Get(context.Background(), types.NamespacedName{Namespace: req.Namespace, Name: req.Name}, obj)
+	}
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
-	key := "example-mutating-admission-webhook"
-	_, found := pod.Annotations[key]
-	if found {
-		return admission.Denied(fmt.Sprintf("can't have annotation %s", key))
+	// objectmeta is the second field in Object, so Field(1)
+	meta = reflect.ValueOf(obj).Elem().Field(1).Interface().(metav1.ObjectMeta)
+	sdewanPurpose := meta.Labels["sdewanPurpose"]
+	if sdewanPurpose == "" {
+		return admission.Allowed("")
 	}
-	return admission.Allowed("")
+	rolePer := map[string][]string{"mwanpolicies": {"app-intent"}}
+	resourcePer := rolePer[req.Resource.Resource]
+	if resourcePer != nil {
+		for _, p := range resourcePer {
+			if p == sdewanPurpose {
+				return admission.Allowed("")
+			}
+		}
+	}
+	return admission.Denied("Your roles don't have the permission")
 }
 
 // podValidator implements admission.DecoderInjector.

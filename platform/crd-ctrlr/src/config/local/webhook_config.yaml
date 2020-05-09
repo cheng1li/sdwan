@@ -1,16 +1,7 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: sdewan-system/sdewan-serving-cert
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"admissionregistration.k8s.io/v1beta1","kind":"ValidatingWebhookConfiguration","metadata":{"annotations":{"cert-manager.io/inject-ca-from":"sdewan-system/sdewan-serving-cert"},"creationTimestamp":null,"name":"sdewan-validating-webhook-configuration"},"webhooks":[{"clientConfig":{"caBundle":"Cg==","service":{"name":"sdewan-webhook-service","namespace":"sdewan-system","path":"/validate-batch-sdewan-akraino-org-v1alpha1-mwan3policy"}},"failurePolicy":"Fail","name":"vmwan3policy.kb.io","rules":[{"apiGroups":["batch.sdewan.akraino.org"],"apiVersions":["v1alpha1"],"operations":["CREATE","UPDATE"],"resources":["mwan3policies"]}]},{"clientConfig":{"caBundle":"Cg==","service":{"name":"sdewan-webhook-service","namespace":"sdewan-system","path":"/validate-v1-pod"}},"failurePolicy":"Fail","name":"vpod.kb.io","rules":[{"apiGroups":[""],"apiVersions":["v1"],"operations":["CREATE","UPDATE"],"resources":["pods"]}]}]}
-  creationTimestamp: "2020-05-07T09:08:35Z"
-  generation: 5
   name: sdewan-validating-webhook-configuration
-  resourceVersion: "14811485"
-  selfLink: /apis/admissionregistration.k8s.io/v1beta1/validatingwebhookconfigurations/sdewan-validating-webhook-configuration
-  uid: 5528f57f-9042-11ea-b18d-525400c65be1
 webhooks:
 - admissionReviewVersions:
   - v1beta1
@@ -51,6 +42,17 @@ webhooks:
     - UPDATE
     resources:
     - pods
+    scope: '*'
+  - apiGroups:
+    - batch.sdewan.akraino.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - mwan3policies
     scope: '*'
   sideEffects: Unknown
   timeoutSeconds: 30
