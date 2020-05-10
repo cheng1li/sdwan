@@ -22,8 +22,9 @@ import (
 	"net/http"
 	"reflect"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -117,7 +118,7 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 	if sdewanPurpose == "" {
 		return admission.Allowed("")
 	}
-	userRolePers := getSdewanPermission(v.Client, req.UserInfo)
+	getSdewanPermission(v.Client, req.UserInfo)
 	rolePer := map[string][]string{"mwanpolicies": {"app-intent"}}
 	resourcePer := rolePer[req.Resource.Resource]
 	if resourcePer != nil {
@@ -132,15 +133,18 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 
 type SdewanpurposeRole map[string][]string
 
-func getSdewanPermission(c client.Client, userInfo authenticationv1.UserInfo) []SdewanpurposeRole {
-	ServiceAccount := false
-	for group := range userInfo.Groups {
-		if group == "system:serviceaccounts" {
-			ServiceAccount = true
-			break
-		}
+func getSdewanPermission(c client.Client, userInfo authenticationv1.UserInfo) ([]SdewanpurposeRole, error) {
+	ctx := context.Background()
+	roleBindings := &rbacv1.RoleBindingList{}
+	err := c.List(ctx, roleBindings, client.MatchingFields{".subjects": userInfo.Username})
+	if err != nil {
+		mwan3policylog.Error(err, "Failed to get rolebinding list")
+		return nil, err
 	}
+	mwan3policylog.Info(fmt.Sprintf("role binds: %v", roleBindings))
+	return nil, nil
 }
+
 // podValidator implements admission.DecoderInjector.
 // A decoder will be automatically injected.
 
