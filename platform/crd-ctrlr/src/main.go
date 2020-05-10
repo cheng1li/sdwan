@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	rbacv1 "k8s.io/api/rbac/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	batchv1alpha1 "sdewan.akraino.org/sdewan/api/v1alpha1"
@@ -63,6 +64,23 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+        if err = mgr.GetFieldIndexer().IndexField(&rbacv1.RoleBinding{}, ".subjects", func(rawObj runtime.Object) []string {
+		var fieldValues []string
+                rolebinding := rawObj.(*rbacv1.RoleBinding)
+		for subject := rolebinding.Subjects {
+			if subject.Kind == "ServiceAcount" {
+				fieldValues = Append(fieldValues, fmt.Sprintf("system:serviceaccounts:%s:%s", subject.Namespace, subject.Name))
+			} else {
+				fieldValues = Append(filedValues, subject.Name)
+			}
+		}
+
+                return fieldValues
+        }); err != nil {
+		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+        }
 
 	if err = (&controllers.Mwan3PolicyReconciler{
 		Client: mgr.GetClient(),

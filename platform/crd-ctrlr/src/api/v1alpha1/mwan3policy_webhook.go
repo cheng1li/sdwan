@@ -23,6 +23,7 @@ import (
 	"reflect"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -116,6 +117,7 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 	if sdewanPurpose == "" {
 		return admission.Allowed("")
 	}
+	userRolePers := getSdewanPermission(v.Client, req.UserInfo)
 	rolePer := map[string][]string{"mwanpolicies": {"app-intent"}}
 	resourcePer := rolePer[req.Resource.Resource]
 	if resourcePer != nil {
@@ -128,6 +130,17 @@ func (v *podValidator) Handle(ctx context.Context, req admission.Request) admiss
 	return admission.Denied("Your roles don't have the permission")
 }
 
+type SdewanpurposeRole map[string][]string
+
+func getSdewanPermission(c client.Client, userInfo authenticationv1.UserInfo) []SdewanpurposeRole {
+	ServiceAccount := false
+	for group := range userInfo.Groups {
+		if group == "system:serviceaccounts" {
+			ServiceAccount = true
+			break
+		}
+	}
+}
 // podValidator implements admission.DecoderInjector.
 // A decoder will be automatically injected.
 
