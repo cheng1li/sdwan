@@ -338,9 +338,9 @@ webhooks:
     service:
       name: sdewan-webhook-service
       namespace: sdewan-system
-      path: /validate-batch-sdewan-akraino-org-v1alpha1-mwan3policy
+      path: /validate-sdewan-bucket-permission
   failurePolicy: Fail
-  name: vmwan3policy.kb.io
+  name: validate-sdewan-bucket
   rules:
   - apiGroups:
     - batch.sdewan.akraino.org
@@ -349,23 +349,6 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - mwan3policies
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: sdewan-webhook-service
-      namespace: sdewan-system
-      path: /validate-v1-pod
-  failurePolicy: Fail
-  name: vpod.kb.io
-  rules:
-  - apiGroups:
-    - ""
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - pods

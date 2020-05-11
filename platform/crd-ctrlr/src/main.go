@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -66,13 +67,25 @@ func main() {
 	}
 
 	err = mgr.GetFieldIndexer().IndexField(&rbacv1.RoleBinding{}, ".subjects", func(rawObj runtime.Object) []string {
-		fieldValues := []string{}
+		var fieldValues []string
 		rolebinding := rawObj.(*rbacv1.RoleBinding)
 		for _, subject := range rolebinding.Subjects {
-			if subject.Kind == "ServiceAcount" {
-				fieldValues = Append(fieldValues, fmt.Sprintf("system:serviceaccounts:%s:%s", subject.Namespace, subject.Name))
+			if subject.Kind == "ServiceAccount" {
+				fieldValues = append(fieldValues, fmt.Sprintf("system:serviceaccount:%s:%s", subject.Namespace, subject.Name))
 			} else {
-				fieldValues = Append(filedValues, subject.Name)
+				fieldValues = append(fieldValues, subject.Name)
+			}
+		}
+		return fieldValues
+	})
+	err = mgr.GetFieldIndexer().IndexField(&rbacv1.ClusterRoleBinding{}, ".subjects", func(rawObj runtime.Object) []string {
+		var fieldValues []string
+		clusterrolebinding := rawObj.(*rbacv1.ClusterRoleBinding)
+		for _, subject := range clusterrolebinding.Subjects {
+			if subject.Kind == "ServiceAccount" {
+				fieldValues = append(fieldValues, fmt.Sprintf("system:serviceaccount:%s:%s", subject.Namespace, subject.Name))
+			} else {
+				fieldValues = append(fieldValues, subject.Name)
 			}
 		}
 		return fieldValues
@@ -90,15 +103,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Mwan3Policy")
 		os.Exit(1)
 	}
-	if err = (&batchv1alpha1.Mwan3Policy{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Mwan3Policy")
-		os.Exit(1)
-	}
 	if err = (&batchv1alpha1.Mwan3Policy{}).SetupWebhookWithManager2(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Mwan3Policy")
-		os.Exit(1)
-	}
-	if err = (&batchv1alpha1.Mwan3Policy{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Mwan3Policy")
 		os.Exit(1)
 	}
